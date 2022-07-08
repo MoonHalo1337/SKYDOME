@@ -1,0 +1,127 @@
+--本地化API
+local client_print, callback_regcallback, entity_get_name, entity_get_entity, entity_get, entity_get_local, string_lower, string_format = client.print, callback.regcallback, EntityList.GetPlayerName, EntityList.GetEntity, EntityList.GetEntityIndexByUserid, EntityList.GetLocal, string.lower, string.format
+--是否射击, 是否命中
+local shot, hurt = false, false, false, false
+--封装一种默认client.print
+local function printf (msg)
+    client_print(msg,255,255,255,255,true,true)
+end
+--封装一种允许自定颜色的client.print
+local function g_color_log (r, g, b, msg)
+    client_print(msg,r,g,b,255,true,false)
+end
+--hitbox名称全局变量
+local hitbox_names = { "head", "neck", "pelvis", "stomach", "lower chest", "chest", "upper chest ", "right thigh", "left thigh", "right calf",
+"left calf", "right foot", "left foot", "right hand", "left hand", "right upper arm", "right forearm", "left upper arm", "left forearm"}     
+--[[
+@hitboxes
+    0. head --头
+    1. neck --脖子
+    2. pelvis --骨盆
+    3. stomach --胃
+    4. lower chest --下胸
+    5. chest --胸
+    6. upper chest --上胸部
+    7. right thigh --右大腿
+    8. left thigh --左大腿
+    9. right calf --右小腿
+    10. left calf --左小腿
+    11. right foot --右脚
+    12. left foot --左脚
+    13. right hand --右手
+    14. left hand --左手
+    15. right upper arm --右上臂
+    16. right forearm --右前臂
+    17. left upper arm --左上臂
+    18. left forearm --左前臂
+    --]]   
+--hitgroup名称全局变量
+local hitgroup_names = { "body", "head", "chest", "stomach", "left arm", "right arm", "left leg", "right leg", "neck", "?"}
+--[[
+@hitgroups
+    0. body --非特定部位
+    1. head --头部
+    2. chest --胸部
+    3. stomach --胃部
+    4. left arm --左臂
+    5. right arm --右臂
+    6. left leg --左腿
+    7. right leg --右腿
+    8. neck --脖子
+    9. ? --@未知部位，正常似乎不会出现。
+    --]]   
+--一些ragebot_shot回调的参数
+local aim_fire_Data = function(e) return {
+    e.targetshot and 'ts' or '',
+    e.pointtype and 'h' or 'm',
+}
+end
+--ragebot_shot回调的int类参数和目标名称
+local fire_data = {
+    id = 0,
+    target_entid,
+    target_name,
+    hitgroup,
+    hitbox,
+    damage,
+    backtracktick
+}
+--player_hurt事件的所有使用参数
+local hurt_data = {
+    target_entid,
+    target_name,
+    hitgroup,
+    damage,
+    health
+}
+
+local function on_aim_fire(e)
+
+    shot = true --回调开始时返回true
+    local flags = aim_fire_Data(e) --获取一些参数信息
+    --将回调内的参数返回给fire_data并封装
+    data_flags = table.concat(flags)
+    fire_data.id = fire_data.id + 1
+    fire_data.target_entid = e.target_entid
+    fire_data.target_name = entity_get_name(entity_get_entity(e.target_entid))
+    fire_data.hitgroup = e.hitgroup
+    fire_data.hitbox = e.hitbox
+    fire_data.damage = e.Damage
+    fire_data.backtracktick = e.backtracktick
+end
+
+local function on_player_hurt(e)
+
+  if e:GetName() ~= "player_hurt" then return end;local target = entity_get(e:GetInt("userid",0));local attacker = entity_get(e:GetInt("attacker",0));if target == entity_get_local():GetIndex() then return end;if attacker ~= entity_get_local():GetIndex() then return end
+
+    hurt = true --击中后返回true
+    --将回调事件内的参数返回给hurt_data并封装
+    hurt_data.target_entid = entity_get(e:GetInt("userid",0))
+    hurt_data.target_name = entity_get_name(entity_get_entity(hurt_data.target_entid))
+    hurt_data.hitgroup = e:GetInt("hitgroup",0)
+    hurt_data.damage = e:GetInt("dmg_health",0)
+    hurt_data.health = e:GetInt("health",0)
+end
+--做一个aim_hit回调
+local function on_aim_hit(e)
+if e:GetName() ~= "player_hurt" then return end;local target = entity_get(e:GetInt("userid",0));local attacker = entity_get(e:GetInt("attacker",0));if target == entity_get_local():GetIndex() then return end;if attacker ~= entity_get_local():GetIndex() then return end;if shot ~= true or hurt ~= true then return end
+
+printf(string_format("[%s] Hit %s's %s for %s(%s) (%s remaining) aimed=%s(%s)",fire_data.id, fire_data.target_name, hitgroup_names[hurt_data.hitgroup + 1], hurt_data.damage, fire_data.damage, hurt_data.health, hitgroup_names[fire_data.hitgroup + 1], data_flags))
+--打印log后返回false
+shot = false
+hurt = false
+end
+
+local function g_player_hurt(e)
+
+    if e:GetName() ~= "player_hurt" then return end;local target = EntityList.GetEntityIndexByUserid(e:GetInt("userid",0));local attacker = EntityList.GetEntityIndexByUserid(e:GetInt("attacker",0));local name = EntityList.GetPlayerName(EntityList.GetEntity(target));if target == EntityList.GetLocal():GetIndex() then return end;if attacker ~= EntityList.GetLocal():GetIndex() then return end
+    local weapon_to_verb = { knife = 'Knifed', hegrenade = 'Naded', inferno = 'Burned' }
+    if e:GetInt("hitgroup",0) ~= 0 then return end;if weapon_to_verb[e:GetString("weapon","")] == nil then return end
+
+printf(string.format("%s %s for %i damage (%i remaining)",weapon_to_verb[e:GetString("weapon","")],string.lower(name), e:GetInt("dmg_health",0), e:GetInt("health",0)))
+end
+
+callback_regcallback("ragebotshot",on_aim_fire)
+callback_regcallback("gameevent",on_player_hurt)
+callback_regcallback("gameevent",on_aim_hit)
+callback_regcallback("gameevent",g_player_hurt)
