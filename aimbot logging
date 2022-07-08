@@ -1,7 +1,7 @@
 --本地化API
 local client_print, callback_regcallback, entity_get_name, entity_get_entity, entity_get, entity_get_local, string_lower, string_format = client.print, callback.regcallback, EntityList.GetPlayerName, EntityList.GetEntity, EntityList.GetEntityIndexByUserid, EntityList.GetLocal, string.lower, string.format
 --是否射击, 是否命中
-local shot, hurt = false, false, false, false
+local shot, hurt = false, false
 --封装一种默认client.print
 local function printf (msg)
     client_print(msg,255,255,255,255,true,true)
@@ -13,43 +13,8 @@ end
 --hitbox名称全局变量
 local hitbox_names = { "head", "neck", "pelvis", "stomach", "lower chest", "chest", "upper chest ", "right thigh", "left thigh", "right calf",
 "left calf", "right foot", "left foot", "right hand", "left hand", "right upper arm", "right forearm", "left upper arm", "left forearm"}     
---[[
-@hitboxes
-    0. head --头
-    1. neck --脖子
-    2. pelvis --骨盆
-    3. stomach --胃
-    4. lower chest --下胸
-    5. chest --胸
-    6. upper chest --上胸部
-    7. right thigh --右大腿
-    8. left thigh --左大腿
-    9. right calf --右小腿
-    10. left calf --左小腿
-    11. right foot --右脚
-    12. left foot --左脚
-    13. right hand --右手
-    14. left hand --左手
-    15. right upper arm --右上臂
-    16. right forearm --右前臂
-    17. left upper arm --左上臂
-    18. left forearm --左前臂
-    --]]   
 --hitgroup名称全局变量
 local hitgroup_names = { "body", "head", "chest", "stomach", "left arm", "right arm", "left leg", "right leg", "neck", "?"}
---[[
-@hitgroups
-    0. body --非特定部位
-    1. head --头部
-    2. chest --胸部
-    3. stomach --胃部
-    4. left arm --左臂
-    5. right arm --右臂
-    6. left leg --左腿
-    7. right leg --右腿
-    8. neck --脖子
-    9. ? --@未知部位，正常似乎不会出现。
-    --]]   
 --一些ragebot_shot回调的参数
 local aim_fire_Data = function(e) return {
     e.targetshot and 'ts' or '',
